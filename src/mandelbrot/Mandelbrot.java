@@ -5,7 +5,7 @@ import java.awt.image.BufferedImage;
 
 public class Mandelbrot {
 
-	private static final int MAX_IT = 100;
+	private static final int MAX_IT = 500;
 	private final int width;
 	private final int height;
 
@@ -46,14 +46,11 @@ public class Mandelbrot {
 
 	private void initColors() {
 		int numOfColors = 100;
-		double blue = 100;
-		double red = 0;
-		double green = 0;
+		double rgb = 0;
 		colors = new Color[numOfColors];
 		for (int i = 0; i < colors.length; i++) {
-			colors[i] = new Color((int) red, (int) green, (int) blue);
-			blue = blue + 155 / (double) colors.length;
-			red = red + 255 / (double) colors.length;
+			rgb += 255*3 / (double) colors.length;
+			colors[i] = new Color((int) rgb);
 		}
 	}
 

@@ -4,10 +4,16 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 
+import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
@@ -31,9 +37,45 @@ public class GUI extends JFrame {
 
 	private void initGUI() {
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		this.set = new Mandelbrot(800, 800);
+		setSize(800, 800);
+		set = new Mandelbrot(800, 800);
 		BufferedImage image = set.getImage();
 		panel = new ImagePanel(image);
+		
+		this.addKeyListener(new KeyListener() {
+			
+			@Override
+			public void keyTyped(KeyEvent e) {
+				if (e.getKeyChar() == 's') {
+					try {
+						saveImage(panel.getImage());
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					}
+				}
+			}
+			
+			@Override
+			public void keyReleased(KeyEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void keyPressed(KeyEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+		});
+
+		panel.addMouseMotionListener(new MouseMotionAdapter() {
+			@Override
+			public void mouseDragged(MouseEvent e) {
+				rect = new Rectangle(start.x, start.y, e.getX() - start.x, e
+						.getY() - start.y);
+				panel.repaint();
+			}
+		});
 
 		panel.addMouseListener(new MouseAdapter() {
 
@@ -44,20 +86,14 @@ public class GUI extends JFrame {
 			}
 
 			@Override
-			public void mouseDragged(MouseEvent e) { //TODO
-				rect = new Rectangle(start.x, start.y, e.getX() - start.x, e
-						.getY() - start.y);
-				System.out.println("set rect");
-				GUI.this.revalidate();
-				panel.repaint();
-			}
-
-			@Override
 			public void mouseReleased(MouseEvent e) {
 				rect = null;
-				GUI.this.end = e.getPoint();
-				System.out.println("released: " + end);
-				GUI.this.zoom();
+				Point p = e.getPoint();
+				if (p.x > start.x) {
+					GUI.this.end = p;
+					System.out.println("released: " + end);
+					GUI.this.zoom();
+				}
 			}
 
 		});
@@ -93,7 +129,10 @@ public class GUI extends JFrame {
 		public void setImage(BufferedImage image) {
 			this.image = image;
 			repaint();
-			System.out.println("repaint");
+		}
+		
+		public BufferedImage getImage() {
+			return image;
 		}
 
 		@Override
@@ -102,10 +141,17 @@ public class GUI extends JFrame {
 			g.drawImage(image, 0, 0, this);
 			g.setColor(Color.yellow);
 			if (rect != null) {
-				System.out.println("draw rect");
-				g.fillRect(rect.x, rect.y, rect.width, rect.height);
+				g.drawRect(rect.x, rect.y, rect.width, rect.height);
 			}
 		}
+	}
+
+	private void saveImage(BufferedImage image) throws IOException {
+		String name = "mandelbrot" + System.currentTimeMillis()
+				+ ".png";
+		System.out.println("save image");
+		File outputfile = new File(name);
+		ImageIO.write(image, "png", outputfile);
 	}
 
 	public static void main(String[] args) {
@@ -116,4 +162,5 @@ public class GUI extends JFrame {
 			}
 		});
 	}
+
 }
