@@ -1,6 +1,8 @@
 package gui;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -15,6 +17,7 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
@@ -23,13 +26,15 @@ import mandelbrot.Mandelbrot;
 public class GUI extends JFrame {
 
 	private static final long serialVersionUID = 1L;
+	private static final Dimension dim = new Dimension(800, 800);
 
 	private Point start;
 	private Point end;
 	private Mandelbrot set;
-	private ImagePanel panel;
+	private ImagePanel mandelbrot;
 
 	private Rectangle rect;
+	private JPanel output;
 
 	public GUI() {
 		initGUI();
@@ -37,49 +42,54 @@ public class GUI extends JFrame {
 
 	private void initGUI() {
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		setSize(800, 800);
-		set = new Mandelbrot(800, 800);
+		setSize(dim);
+		set = new Mandelbrot(dim.width, dim.height);
 		BufferedImage image = set.getImage();
-		panel = new ImagePanel(image);
-		
+		mandelbrot = new ImagePanel(image);
+		output = new JPanel();
+		output.add(new JLabel("Test"));
+
 		this.addKeyListener(new KeyListener() {
-			
+
 			@Override
 			public void keyTyped(KeyEvent e) {
 				if (e.getKeyChar() == 's') {
 					try {
-						saveImage(panel.getImage());
+						saveImage(mandelbrot.getImage());
 					} catch (IOException e1) {
 						e1.printStackTrace();
 					}
 				}
 			}
-			
+
 			@Override
 			public void keyReleased(KeyEvent e) {
-				
+
 			}
-			
+
 			@Override
 			public void keyPressed(KeyEvent e) {
-				
+
 			}
 		});
 
-		panel.addMouseMotionListener(new MouseMotionAdapter() {
+		mandelbrot.addMouseMotionListener(new MouseMotionAdapter() {
 			@Override
 			public void mouseDragged(MouseEvent e) {
-				rect = new Rectangle(start.x, start.y, e.getX() - start.x, e
-						.getY() - start.y);
-				panel.repaint();
+				Point upperleft = getUpperLeftPoint(start, e.getPoint());
+				Point downright = getDownRightPoint(start, e.getPoint());
+				
+				rect = new Rectangle(upperleft.x, upperleft.y, downright.x - upperleft.x,
+							downright.y - upperleft.y);
+				mandelbrot.repaint();
 			}
 		});
 
-		panel.addMouseListener(new MouseAdapter() {
+		mandelbrot.addMouseListener(new MouseAdapter() {
 
 			@Override
 			public void mousePressed(MouseEvent e) {
-				GUI.this.start = e.getPoint();
+				start = e.getPoint();
 				System.out.println("pressed: " + start);
 			}
 
@@ -87,19 +97,58 @@ public class GUI extends JFrame {
 			public void mouseReleased(MouseEvent e) {
 				rect = null;
 				Point p = e.getPoint();
-				if (p.x > start.x) {
-					GUI.this.end = p;
-					System.out.println("released: " + end);
+				if (p.x != start.x) {
+					Point temp = getUpperLeftPoint(start, p);
+					end = getDownRightPoint(start, p);
+					start = temp;
+					System.out.println("released, start: " + start + ", end: " + end);
 					GUI.this.zoom();
 				}
 			}
 
 		});
 
-		add(panel);
+		this.setLayout(new BorderLayout());
+		add(mandelbrot, BorderLayout.CENTER);
+		// add(output, BorderLayout.LINE_END);
 		setVisible(true);
 	}
 
+	private Point getUpperLeftPoint(Point p1, Point p2) {
+		Point upperleft = new Point();
+		
+		if(p1.x < p2.x) {
+			upperleft.x = p1.x;
+		} else {
+			upperleft.x = p2.x;
+		}
+		
+		if(p1.y < p2.y) {
+			upperleft.y = p1.y;
+		} else {
+			upperleft.y = p2.y;
+		}
+		return upperleft;
+	}
+	
+	private Point getDownRightPoint(Point p1, Point p2) {
+		Point downright = new Point();
+		
+		if(p1.x < p2.x) {
+			downright.x = p2.x;
+		} else {
+			downright.x = p1.x;
+		}
+		
+		if(p1.y < p2.y) {
+			downright.y = p2.y;
+		} else {
+			downright.y = p1.y;
+		}
+		
+		return downright;
+	}
+	
 	private void zoom() {
 		double curReStart = set.getReStart();
 		double curImStart = set.getImStart();
@@ -112,7 +161,7 @@ public class GUI extends JFrame {
 
 		BufferedImage image = set.getImage(newReStart, newImStart, newReEnd);
 		System.out.println("set new image");
-		panel.setImage(image);
+		mandelbrot.setImage(image);
 	}
 
 	private class ImagePanel extends JPanel {
@@ -128,7 +177,7 @@ public class GUI extends JFrame {
 			this.image = image;
 			repaint();
 		}
-		
+
 		public BufferedImage getImage() {
 			return image;
 		}
@@ -145,8 +194,7 @@ public class GUI extends JFrame {
 	}
 
 	private void saveImage(BufferedImage image) throws IOException {
-		String name = "mandelbrot" + System.currentTimeMillis()
-				+ ".png";
+		String name = "mandelbrot" + System.currentTimeMillis() + ".png";
 		System.out.println("save image");
 		File outputfile = new File(name);
 		ImageIO.write(image, "png", outputfile);
