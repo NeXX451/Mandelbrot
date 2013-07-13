@@ -12,9 +12,13 @@ public class Mandelbrot {
 	private final int width;
 	private final int height;
 
-	private double reStart = -2.15;
-	private double imStart = 1.50;
-	private double reEnd = 0.85;
+	public static final double RE_START_DEFAULT = -2.15;
+	public static final double IM_START_DEFAULT = 1.50;
+	public static final double RE_END_DEFAULT = 0.85;
+	
+	private double reStart = RE_START_DEFAULT;
+	private double imStart = IM_START_DEFAULT;
+	private double reEnd = RE_END_DEFAULT;
 	private double step;
 
 	private double reC;

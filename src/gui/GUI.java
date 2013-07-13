@@ -17,7 +17,6 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
@@ -26,7 +25,9 @@ import mandelbrot.Mandelbrot;
 public class GUI extends JFrame {
 
 	private static final long serialVersionUID = 1L;
-	private static final Dimension dim = new Dimension(800, 800);
+	private static final Dimension dim = new Dimension(800, 850);
+
+	private static final int SCROLL_FACTOR = 100;
 
 	private Point start;
 	private Point end;
@@ -34,7 +35,7 @@ public class GUI extends JFrame {
 	private ImagePanel mandelbrot;
 
 	private Rectangle rect;
-	private JPanel output;
+	private OptionPanel options;
 
 	public GUI() {
 		initGUI();
@@ -43,11 +44,10 @@ public class GUI extends JFrame {
 	private void initGUI() {
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setSize(dim);
-		set = new Mandelbrot(dim.width, dim.height);
+		set = new Mandelbrot(dim.width, dim.height - 50);
 		BufferedImage image = set.getImage();
 		mandelbrot = new ImagePanel(image);
-		output = new JPanel();
-		output.add(new JLabel("Test"));
+		options = new OptionPanel(set);
 
 		this.addKeyListener(new KeyListener() {
 
@@ -60,16 +60,44 @@ public class GUI extends JFrame {
 						e1.printStackTrace();
 					}
 				}
+				if (e.getKeyChar() == 'r') {
+					setImage(Mandelbrot.RE_START_DEFAULT,
+							Mandelbrot.IM_START_DEFAULT,
+							Mandelbrot.RE_END_DEFAULT);
+				}
+
 			}
 
 			@Override
 			public void keyReleased(KeyEvent e) {
-
+				double step = set.getStep();
+				if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+					System.out.println("right scroll");
+					setImage(set.getReStart() + step * SCROLL_FACTOR,
+							set.getImStart(), set.getReEnd() + step
+									* SCROLL_FACTOR);
+				}
+				if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+					System.out.println("left scroll");
+					setImage(set.getReStart() - step * SCROLL_FACTOR,
+							set.getImStart(), set.getReEnd() - step
+									* SCROLL_FACTOR);
+				}
+				if (e.getKeyCode() == KeyEvent.VK_UP) {
+					System.out.println("up scroll");
+					setImage(set.getReStart(),
+							set.getImStart() + step * SCROLL_FACTOR, set.getReEnd());
+				}
+				if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+					System.out.println("down scroll");
+					setImage(set.getReStart(),
+							set.getImStart() - step * SCROLL_FACTOR, set.getReEnd());
+				}
 			}
 
 			@Override
 			public void keyPressed(KeyEvent e) {
-
+				
 			}
 		});
 
@@ -78,9 +106,9 @@ public class GUI extends JFrame {
 			public void mouseDragged(MouseEvent e) {
 				Point upperleft = getUpperLeftPoint(start, e.getPoint());
 				Point downright = getDownRightPoint(start, e.getPoint());
-				
-				rect = new Rectangle(upperleft.x, upperleft.y, downright.x - upperleft.x,
-							downright.y - upperleft.y);
+
+				rect = new Rectangle(upperleft.x, upperleft.y, downright.x
+						- upperleft.x, downright.y - upperleft.y);
 				mandelbrot.repaint();
 			}
 		});
@@ -101,7 +129,8 @@ public class GUI extends JFrame {
 					Point temp = getUpperLeftPoint(start, p);
 					end = getDownRightPoint(start, p);
 					start = temp;
-					System.out.println("released, start: " + start + ", end: " + end);
+					System.out.println("released, start: " + start + ", end: "
+							+ end);
 					GUI.this.zoom();
 				}
 			}
@@ -110,45 +139,45 @@ public class GUI extends JFrame {
 
 		this.setLayout(new BorderLayout());
 		add(mandelbrot, BorderLayout.CENTER);
-		// add(output, BorderLayout.LINE_END);
+		add(options, BorderLayout.PAGE_START);
 		setVisible(true);
 	}
 
 	private Point getUpperLeftPoint(Point p1, Point p2) {
 		Point upperleft = new Point();
-		
-		if(p1.x < p2.x) {
+
+		if (p1.x < p2.x) {
 			upperleft.x = p1.x;
 		} else {
 			upperleft.x = p2.x;
 		}
-		
-		if(p1.y < p2.y) {
+
+		if (p1.y < p2.y) {
 			upperleft.y = p1.y;
 		} else {
 			upperleft.y = p2.y;
 		}
 		return upperleft;
 	}
-	
+
 	private Point getDownRightPoint(Point p1, Point p2) {
 		Point downright = new Point();
-		
-		if(p1.x < p2.x) {
+
+		if (p1.x < p2.x) {
 			downright.x = p2.x;
 		} else {
 			downright.x = p1.x;
 		}
-		
-		if(p1.y < p2.y) {
+
+		if (p1.y < p2.y) {
 			downright.y = p2.y;
 		} else {
 			downright.y = p1.y;
 		}
-		
+
 		return downright;
 	}
-	
+
 	private void zoom() {
 		double curReStart = set.getReStart();
 		double curImStart = set.getImStart();
@@ -159,9 +188,13 @@ public class GUI extends JFrame {
 
 		double newReEnd = curReStart + end.x * step;
 
+		setImage(newReStart, newImStart, newReEnd);
+	}
+
+	private void setImage(double newReStart, double newImStart, double newReEnd) {
 		BufferedImage image = set.getImage(newReStart, newImStart, newReEnd);
-		System.out.println("set new image");
 		mandelbrot.setImage(image);
+		options.update();
 	}
 
 	private class ImagePanel extends JPanel {
