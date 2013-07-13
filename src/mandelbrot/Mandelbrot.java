@@ -50,12 +50,17 @@ public class Mandelbrot {
 	private void initColors() {
 		int numOfColors = maxIt;
 		colors = new Color[numOfColors];
-		float hue = 0;
-		float step = 0.003f;
+		float hue = 0.33f;
+		float brightness = 1;
+		float saturation = 1;
 		for (int i = 0; i < colors.length; i++) {
-			step = (float) (1 / (Math.log(i + 2) * 100));
-			hue += step;
-			colors[i] = new Color(Color.HSBtoRGB(hue, 1f, 1f));
+			float steph = (float) (1 / (Math.log(i + 2) * 100));
+			float stepb = (float) (1 / (Math.log(i + 2) * 1000));
+//			float steps = (float) (1 / (Math.log(i + 2) * 200));
+			hue += steph;
+			brightness += stepb;
+//			saturation += steps;
+			colors[i] = new Color(Color.HSBtoRGB(hue, saturation, brightness));
 		}
 	}
 
