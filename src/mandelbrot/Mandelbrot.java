@@ -6,7 +6,7 @@ import java.awt.image.BufferedImage;
 public class Mandelbrot {
 
 	private static final float ESCAPE_RADIUS = 2f;
-	private static final int MAX_OF_MAX_IT = 1000;
+	private static final int MAX_OF_MAX_IT = 550;
 	
 	private int maxIt = 100;
 	private final int width;
@@ -30,6 +30,9 @@ public class Mandelbrot {
 
 	private Color[] colors;
 	private double modulus;
+	private int hueFactor = 100;
+	private int brightnessFactor = 1000;
+	private float initialHue = 0.33f;
 
 	public double getReStart() {
 		return reStart;
@@ -54,12 +57,12 @@ public class Mandelbrot {
 	private void initColors() {
 		int numOfColors = maxIt;
 		colors = new Color[numOfColors];
-		float hue = 0.33f;
+		float hue = initialHue;
 		float brightness = 1;
 		float saturation = 1;
 		for (int i = 0; i < colors.length; i++) {
-			float steph = (float) (1 / (Math.log(i + 2) * 100));
-			float stepb = (float) (1 / (Math.log(i + 2) * 1000));
+			float steph = (float) (1 / (Math.log(i + 2) * hueFactor));
+			float stepb = (float) (1 / (Math.log(i + 2) * brightnessFactor));
 //			float steps = (float) (1 / (Math.log(i + 2) * 200));
 			hue += steph;
 			brightness += stepb;
@@ -163,6 +166,7 @@ public class Mandelbrot {
 	}
 
 	public BufferedImage getImage() {
+		initColors();
 		return createImage();
 	}
 
@@ -170,4 +174,15 @@ public class Mandelbrot {
 		return step;
 	}
 
+	public void setHueFactor(int value) {
+		this.hueFactor = value;
+	}
+	
+	public void setBrightnessFactor(int value) {
+		this.brightnessFactor  = value;
+	}
+
+	public void setInitialHue(float value) {
+		this.initialHue  = value;
+	}
 }

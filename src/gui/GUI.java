@@ -19,6 +19,9 @@ import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UIManager.LookAndFeelInfo;
+import javax.swing.UnsupportedLookAndFeelException;
 
 import mandelbrot.Mandelbrot;
 
@@ -27,15 +30,16 @@ public class GUI extends JFrame {
 	private static final long serialVersionUID = 1L;
 	private static final Dimension dim = new Dimension(800, 850);
 
-	private static final int SCROLL_FACTOR = 100;
+	private static final int SCROLL_FACTOR = 80;
 
 	private Point start;
 	private Point end;
 	private Mandelbrot set;
-	private ImagePanel mandelbrot;
+	private ImagePanel imagePanel;
 
-	private Rectangle rect;
-	private OptionPanel options;
+	private Rectangle rectangle;
+	private InfoPanel info;
+//	private MainMenu menuBar;
 
 	public GUI() {
 		initGUI();
@@ -44,18 +48,32 @@ public class GUI extends JFrame {
 	private void initGUI() {
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setSize(dim);
+		
 		set = new Mandelbrot(dim.width, dim.height - 50);
 		BufferedImage image = set.getImage();
-		mandelbrot = new ImagePanel(image);
-		options = new OptionPanel(set);
+		imagePanel = new ImagePanel(image);
+		info = new InfoPanel(set, this);
+//		menuBar = new MainMenu();
+		
+		initListener();
 
-		this.addKeyListener(new KeyListener() {
+//		this.setJMenuBar(menuBar);
+		this.setLayout(new BorderLayout());
+		add(imagePanel, BorderLayout.CENTER);
+		add(info, BorderLayout.PAGE_START);
+		setVisible(true);
+		imagePanel.setFocusable(true);
+		imagePanel.requestFocusInWindow();
+	}
+
+	private void initListener() {
+		imagePanel.addKeyListener(new KeyListener() {
 
 			@Override
 			public void keyTyped(KeyEvent e) {
 				if (e.getKeyChar() == 's') {
 					try {
-						saveImage(mandelbrot.getImage());
+						saveImage(imagePanel.getImage());
 					} catch (IOException e1) {
 						e1.printStackTrace();
 					}
@@ -97,23 +115,27 @@ public class GUI extends JFrame {
 
 			@Override
 			public void keyPressed(KeyEvent e) {
-				
 			}
 		});
-
-		mandelbrot.addMouseMotionListener(new MouseMotionAdapter() {
+		
+		imagePanel.addMouseMotionListener(new MouseMotionAdapter() {
 			@Override
 			public void mouseDragged(MouseEvent e) {
 				Point upperleft = getUpperLeftPoint(start, e.getPoint());
 				Point downright = getDownRightPoint(start, e.getPoint());
 
-				rect = new Rectangle(upperleft.x, upperleft.y, downright.x
+				rectangle = new Rectangle(upperleft.x, upperleft.y, downright.x
 						- upperleft.x, downright.y - upperleft.y);
-				mandelbrot.repaint();
+				imagePanel.repaint();
+			}
+			
+			@Override
+			public void mouseMoved(MouseEvent e){
+				imagePanel.requestFocusInWindow();
 			}
 		});
 
-		mandelbrot.addMouseListener(new MouseAdapter() {
+		imagePanel.addMouseListener(new MouseAdapter() {
 
 			@Override
 			public void mousePressed(MouseEvent e) {
@@ -123,7 +145,7 @@ public class GUI extends JFrame {
 
 			@Override
 			public void mouseReleased(MouseEvent e) {
-				rect = null;
+				rectangle = null;
 				Point p = e.getPoint();
 				if (p.x != start.x) {
 					Point temp = getUpperLeftPoint(start, p);
@@ -136,11 +158,6 @@ public class GUI extends JFrame {
 			}
 
 		});
-
-		this.setLayout(new BorderLayout());
-		add(mandelbrot, BorderLayout.CENTER);
-		add(options, BorderLayout.PAGE_START);
-		setVisible(true);
 	}
 
 	private Point getUpperLeftPoint(Point p1, Point p2) {
@@ -193,8 +210,13 @@ public class GUI extends JFrame {
 
 	private void setImage(double newReStart, double newImStart, double newReEnd) {
 		BufferedImage image = set.getImage(newReStart, newImStart, newReEnd);
-		mandelbrot.setImage(image);
-		options.update();
+		imagePanel.setImage(image);
+		info.update();
+	}
+	
+	public void updateImage() {
+		BufferedImage image = set.getImage();
+		imagePanel.setImage(image);
 	}
 
 	private class ImagePanel extends JPanel {
@@ -220,8 +242,8 @@ public class GUI extends JFrame {
 			super.paintComponent(g);
 			g.drawImage(image, 0, 0, this);
 			g.setColor(Color.yellow);
-			if (rect != null) {
-				g.drawRect(rect.x, rect.y, rect.width, rect.height);
+			if (rectangle != null) {
+				g.drawRect(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
 			}
 		}
 	}
@@ -233,7 +255,18 @@ public class GUI extends JFrame {
 		ImageIO.write(image, "png", outputfile);
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException {
+		for (LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+			if ("Nimbus".equals(info.getName())) {
+				try {
+					UIManager.setLookAndFeel(info.getClassName());
+				} catch (Exception e) {
+					System.err.println(e.getMessage());
+				}
+				break;
+			}
+		}
+		 
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
